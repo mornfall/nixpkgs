@@ -61,6 +61,13 @@ rec {
       done
     '';
 
+  teardown = writeScript "vm-teardown" ''
+    #! ${initrdUtils}/bin/ash
+    echo $1 > ./tmp/xchg/in-vm-exit
+    mount -o remount,ro dummy .
+    echo DONE
+    poweroff -f
+  '';
 
   stage1Init = writeScript "vm-run-stage1" ''
     #! ${initrdUtils}/bin/ash -e
@@ -110,7 +117,7 @@ rec {
     fi
 
     mkdir -p /fs/dev
-    mount -o bind /dev /fs/dev
+    mount --move /dev /fs/dev
 
     mkdir -p /fs/dev /fs/dev/shm
     mount -t tmpfs -o "mode=1777" none /fs/dev/shm
@@ -139,9 +146,10 @@ rec {
     echo "127.0.0.1 localhost" > /fs/etc/hosts
 
     echo "starting stage 2 ($command)"
-    exec switch_root /fs $command $out
-  '';
 
+    exec switch_root /fs ${bash}/bin/bash -c "cd / ; $command $out ; ${teardown} \$?"
+    ${teardown} $?
+  '';
 
   initrd = makeInitrd {
     contents = [
