@@ -61,6 +61,13 @@ rec {
       done
     '';
 
+  teardown = writeScript "vm-teardown" ''
+    #! ${initrdUtils}/bin/ash
+    echo $1 > ./tmp/xchg/in-vm-exit
+    mount -o remount,ro dummy .
+    echo DONE
+    poweroff -f
+  '';
 
   stage1Init = writeScript "vm-run-stage1" ''
     #! ${initrdUtils}/bin/ash -e
@@ -110,7 +117,7 @@ rec {
     fi
 
     mkdir -p /fs/dev
-    mount -o bind /dev /fs/dev
+    mount --move /dev /fs/dev
 
     echo "mounting Nix store..."
     mkdir -p /fs/nix/store
@@ -136,15 +143,9 @@ rec {
     echo "starting stage 2 ($command)"
     test -n "$command"
 
-    set +e
-    chroot /fs $command $out
-    echo $? > /fs/tmp/xchg/in-vm-exit
-
-    mount -o remount,ro dummy /fs
-
-    poweroff -f
+    exec switch_root /fs ${bash}/bin/bash -c "cd / ; $command $out ; ${teardown} \$?"
+    ${teardown} $?
   '';
-
 
   initrd = makeInitrd {
     contents = [
