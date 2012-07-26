@@ -1,5 +1,5 @@
 { pkgs
-, kernel ? pkgs.linux_3_10
+, nixpkgsKernel ? pkgs.linux_3_10
 , img ? "bzImage"
 , rootModules ?
     [ "virtio_pci" "virtio_blk" "virtio_balloon" "ext4" "unix" "9p" "9pnet_virtio" ]
@@ -14,8 +14,9 @@ rec {
   qemuProg = "${qemu}/bin/qemu-kvm";
 
 
-  modulesClosure = makeModulesClosure {
+  modulesClosure = kernel: makeModulesClosure {
     inherit kernel rootModules;
+    allowMissing = true;
   };
 
 
@@ -24,7 +25,7 @@ rec {
 
   initrdUtils = runCommand "initrd-utils"
     { buildInputs = [ nukeReferences ];
-      allowedReferences = [ "out" modulesClosure ]; # prevent accidents like glibc being included in the initrd
+      allowedReferences = [ "out" ]; # prevent accidents like glibc being included in the initrd
     }
     ''
       mkdir -p $out/bin
@@ -69,8 +70,9 @@ rec {
     halt -d -p -f
   '';
 
-  stage1Init = writeScript "vm-run-stage1" ''
+  stage1Init = kernel: writeScript "vm-run-stage1" ''
     #! ${initrdUtils}/bin/ash -e
+    echo START
 
     export PATH=${initrdUtils}/bin
 
@@ -99,7 +101,7 @@ rec {
     done
 
     echo "loading kernel modules..."
-    for i in $(cat ${modulesClosure}/insmod-list); do
+    for i in $(cat ${modulesClosure kernel}/insmod-list); do
       insmod $i
     done
 
@@ -147,10 +149,9 @@ rec {
     ${teardown} $?
   '';
 
-
-  initrd = makeInitrd {
+  initrd = kernel: makeInitrd {
     contents = [
-      { object = stage1Init;
+      { object = stage1Init kernel;
         symlink = "/init";
       }
     ];
@@ -188,7 +189,7 @@ rec {
   '';
 
 
-  qemuCommandLinux = ''
+  qemuCommandLinux = kernel: ''
     ${qemuProg} \
       ${lib.optionalString (pkgs.stdenv.system == "x86_64-linux") "-cpu kvm64"} \
       -nographic -no-reboot \
@@ -196,7 +197,7 @@ rec {
       -virtfs local,path=$TMPDIR/xchg,security_model=none,mount_tag=xchg \
       -drive file=$diskImage,if=virtio,cache=writeback,werror=report \
       -kernel ${kernel}/${img} \
-      -initrd ${initrd}/initrd \
+      -initrd ${initrd kernel}/initrd \
       -append "console=ttyS0 panic=1 command=${stage2Init} out=$out mountDisk=$mountDisk loglevel=4" \
       $QEMU_OPTS
   '';
@@ -286,14 +287,16 @@ rec {
      `run-vm' will be left behind in the temporary build directory
      that allows you to boot into the VM and debug it interactively. */
 
-  runInLinuxVM = drv: lib.overrideDerivation drv (attrs: {
-    requiredSystemFeatures = [ "kvm" ];
-    builder = "${bash}/bin/sh";
-    args = ["-e" (vmRunCommand qemuCommandLinux)];
-    origArgs = attrs.args;
-    origBuilder = attrs.builder;
-    QEMU_OPTS = "-m ${toString (attrs.memSize or 512)}";
-  });
+  runInLinuxVM = drv: let
+        kernel = if drv ? kernel then drv.kernel else nixpkgsKernel;
+    in lib.overrideDerivation drv (attrs: {
+        requiredSystemFeatures = [ "kvm" ];
+        builder = "${bash}/bin/sh";
+        args = ["-e" (vmRunCommand (qemuCommandLinux kernel))];
+        origArgs = attrs.args;
+        origBuilder = attrs.builder;
+        QEMU_OPTS = "-m ${toString (attrs.memSize or 512)}";
+      });
 
 
   extractFs = {file, fs ? null} :
@@ -469,7 +472,7 @@ rec {
     mkdir $TMPDIR/xchg
     export > $TMPDIR/xchg/saved-env
     mountDisk=1
-    ${qemuCommandLinux}
+    ${qemuCommandLinux nixpkgsKernel}
   '';
 
 
@@ -666,6 +669,41 @@ rec {
         packages = packages ++ extraPackages;
       }) { inherit fetchurl; };
     };
+
+  rpm2kernel = rpms: stdenv.mkDerivation {
+    name = "rpm2kernel";
+    inherit rpms;
+    builder = writeScript "rpm2kernel-builder" ''
+      source $stdenv/setup
+      ensureDir $out
+      cd $out
+      for r in $rpms; do
+        echo $r | grep "kernel-[0-9]" || continue
+        ${rpm}/bin/rpm2cpio $r | ${cpio}/bin/cpio -i --make-directories
+      done
+      cd $out
+      ln -s boot/vmlinuz* bzImage
+      ln -s boot/System.map* System.map
+      ln -s boot/config* config
+      cd lib/modules
+      ver=`echo *`
+      cd $ver
+      ${module_init_tools}/sbin/depmod -ae -F $out/System.map $ver -b $out
+    '';
+  };
+
+  makeKernelFromRPMDist =
+    { urlPrefix ? "", urlPrefixes ? [urlPrefix]
+    , packagesList ? "", packagesLists ? [packagesList]
+    , archs ? ["noarch" "i386"]
+    , ...}:
+
+    rpm2kernel (
+      import (rpmClosureGenerator {
+        inherit packagesLists urlPrefixes archs;
+        name = "kernel";
+        packages = "kernel";
+      }) { inherit fetchurl; });
 
 
   /* Like `rpmClosureGenerator', but now for Debian/Ubuntu releases
