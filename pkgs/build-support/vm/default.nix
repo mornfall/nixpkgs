@@ -144,6 +144,8 @@ rec {
     ln -sf /proc/mounts /fs/etc/mtab
     echo "127.0.0.1 localhost" > /fs/etc/hosts
 
+    mkdir -p /fs/run
+
     echo "starting stage 2 ($command)"
     test -n "$command"
 
