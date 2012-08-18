@@ -153,6 +153,8 @@ rec {
     ${teardown} $?
   '';
 
+  definitrd = initrd linuxKernel;
+
   initrd = kernel: makeInitrd {
     contents = [
       { object = stage1Init kernel;
