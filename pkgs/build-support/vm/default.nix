@@ -1601,6 +1601,7 @@ rec {
     "rpm-build"
     "tar"
     "unzip"
+    "kernel"
   ];
 
   commonCentOSPackages = [
