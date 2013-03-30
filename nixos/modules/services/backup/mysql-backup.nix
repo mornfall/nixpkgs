@@ -9,7 +9,7 @@ let
   cfg = config.services.mysqlBackup ;
   location = cfg.location ;
   mysqlBackupCron = db : ''
-    ${cfg.period} ${cfg.user} ${mysql}/bin/mysqldump ${if cfg.singleTransaction then "--single-transaction" else ""} ${db} | ${gzip}/bin/gzip -c > ${location}/${db}.gz
+    ${cfg.period} ${cfg.user} ${mysql}/bin/mysqldump ${if cfg.singleTransaction then "--single-transaction" else ""} -u ${cfg.user} ${db} | ${gzip}/bin/gzip -c > ${location}/${db}.gz
   '';
 
 in
