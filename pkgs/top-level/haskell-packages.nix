@@ -952,6 +952,8 @@ let result = let callPackage = x : y : modifyPrio (newScope result.finalReturn x
 
   FerryCore = callPackage ../development/libraries/haskell/FerryCore {};
 
+  fft = callPackage ../development/libraries/haskell/fft { fftw3 = pkgs.fftw; };
+
   funcmp = callPackage ../development/libraries/haskell/funcmp {};
 
   feed = callPackage ../development/libraries/haskell/feed {};
@@ -2330,6 +2332,8 @@ let result = let callPackage = x : y : modifyPrio (newScope result.finalReturn x
   arbtt = callPackage ../applications/misc/arbtt {};
 
   darcs = callPackage ../applications/version-management/darcs {};
+
+  htune = callPackage ../applications/audio/htune {};
 
   idris_plain = callPackage ../development/compilers/idris {};
 
