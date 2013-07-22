@@ -67,7 +67,7 @@ rec {
     echo $1 > ./tmp/xchg/in-vm-exit
     mount -o remount,ro dummy .
     echo DONE
-    halt -d -p -f
+    poweroff -f
   '';
 
   stage1Init = kernel: writeScript "vm-run-stage1" ''
