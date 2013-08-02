@@ -486,7 +486,7 @@ rec {
      tarball must contain an RPM specfile. */
 
   buildRPM = attrs: runInLinuxImage (stdenv.mkDerivation ({
-    phases = "prepareImagePhase sysInfoPhase buildPhase installPhase";
+    prePhases = "prepareImagePhase sysInfoPhase";
 
     outDir = "rpms/${attrs.diskImage.name}";
 
@@ -507,6 +507,12 @@ rec {
       stopNest
     '';
 
+    postHook = ''
+      if test -d $src/tarballs; then
+          src=$(ls $src/tarballs/*.tar.bz2 $src/tarballs/*.tar.gz | sort | head -1)
+      fi
+    '';
+
     buildPhase = ''
       eval "$preBuild"
 
@@ -524,10 +530,6 @@ rec {
 
       echo "%_topdir $rpmout" >> $HOME/.rpmmacros
 
-      mkdir /tmp/build && cd /tmp/build
-      # this is less efficient than rpmbuild -ta but it actually works
-      tar xvzf "$rpmout/SOURCES/$srcName"
-      cd *
       chown root:root -R .
       rpmbuild -vv -ba *.spec
 
