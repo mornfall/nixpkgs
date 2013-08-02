@@ -543,7 +543,7 @@ rec {
      tarball must contain an RPM specfile. */
 
   buildRPM = attrs: runInLinuxImage (stdenv.mkDerivation ({
-    phases = "prepareImagePhase sysInfoPhase buildPhase installPhase";
+    prePhases = "prepareImagePhase sysInfoPhase";
 
     outDir = "rpms/${attrs.diskImage.name}";
 
@@ -564,6 +564,12 @@ rec {
       stopNest
     '';
 
+    postHook = ''
+      if test -d $src/tarballs; then
+          src=$(ls $src/tarballs/*.tar.bz2 $src/tarballs/*.tar.gz | sort | head -1)
+      fi
+    '';
+
     buildPhase = ''
       eval "$preBuild"
 
@@ -582,7 +588,8 @@ rec {
       echo "%_topdir $rpmout" >> $HOME/.rpmmacros
 
       if [ `uname -m` = i686 ]; then extra="--target i686-linux"; fi
-      rpmbuild -vv $extra -ta "$srcName"
+      chown root:root -R .
+      rpmbuild -vv $extra -ba *.spec
 
       eval "$postBuild"
     '';
