@@ -105,8 +105,10 @@ rec {
       insmod $i
     done
 
-    mount -t tmpfs none /dev
-    ${createDeviceNodes "/dev"}
+    mount -t devtmpfs none /dev || {
+        mount -t tmpfs none /dev
+        ${createDeviceNodes "/dev"}
+    }
 
     ifconfig lo up
 
