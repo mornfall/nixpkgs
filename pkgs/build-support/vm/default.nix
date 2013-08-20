@@ -567,8 +567,9 @@ rec {
     '';
 
     postHook = ''
+      . ${../release/functions.sh}
       if test -d $src/tarballs; then
-          src=$(ls $src/tarballs/*.tar.bz2 $src/tarballs/*.tar.gz | sort | head -1)
+          src=$(findTarballs $src | head -1)
       fi
     '';
 
