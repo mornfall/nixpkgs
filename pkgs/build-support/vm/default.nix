@@ -2,7 +2,8 @@
 , nixpkgsKernel ? pkgs.linux
 , img ? "bzImage"
 , rootModules ?
-    [ "virtio_pci" "virtio_blk" "virtio_balloon" "ext4" "unix" "9p" "9pnet_virtio" "rtc_cmos" ]
+    [ "virtio_pci" "virtio_blk" "virtio_balloon" "ext4" "unix" "9p" "9pnet_virtio" "rtc_cmos"
+      "cifs" "virtio_net" "unix" "hmac" "md4" "ecb" "des_generic" "sha256" ]
 }:
 
 with pkgs;
@@ -123,16 +124,30 @@ rec {
     mkdir -p /fs/dev
     mount --move /dev /fs/dev
 
-    echo "mounting Nix store..."
     mkdir -p /fs/nix/store
-    mount -t 9p store /fs/nix/store -o trans=virtio,version=9p2000.L,msize=262144,cache=loose
-
     mkdir -p /fs/tmp
-    mount -t tmpfs -o "mode=1777" none /fs/tmp
 
-    echo "mounting host's temporary directory..."
+    # tmpfs may be faster, but there's a tendency to run out of RAM on 32b systems
+    # mount -t tmpfs -o "mode=755" none /fs/tmp
+
     mkdir -p /fs/tmp/xchg
-    mount -t 9p xchg /fs/tmp/xchg -o trans=virtio,version=9p2000.L,msize=262144,cache=loose
+
+    echo "mounting Nix store..."
+    mount -t 9p store /fs/nix/store -o trans=virtio,version=9p2000.L,msize=262144,cache=loose || \
+      usecifs=1
+
+    /fs${busybox}/bin/busybox ls || usecifs=1
+
+    if test -n "$usecifs"; then
+      echo "re-mounting Nix store using CIFS..."
+      umount /fs/nix/store
+      ifconfig eth0 up 10.0.2.15
+      mount -t cifs //10.0.2.4/store /fs/nix/store -o guest,sec=none,sec=ntlm
+      echo "mounting xchg using CIFS..."
+      mount -t cifs //10.0.2.4/xchg /fs/tmp/xchg -o guest,sec=none,sec=ntlm
+    else
+      mount -t 9p xchg /fs/tmp/xchg -o trans=virtio,version=9p2000.L,msize=262144,cache=loose
+    fi
 
     mkdir -p /fs/proc
     mount -t proc none /fs/proc
@@ -198,11 +213,47 @@ rec {
     fi
   '';
 
+  startSamba = ''
+    export WHO=`whoami`
+    mkdir -p $TMPDIR/xchg
+
+    cat > $TMPDIR/smb.conf <<SMB
+    [global]
+      private dir = $TMPDIR
+      smb ports = 0
+      socket address = 127.0.0.1
+      pid directory = $TMPDIR
+      lock directory = $TMPDIR
+      log file = $TMPDIR/log.smbd
+      smb passwd file = $TMPDIR/smbpasswd
+      security = share
+    [store]
+      force user = $WHO
+      path = /nix/store
+      read only = no
+      guest ok = yes
+    [xchg]
+      force user = $WHO
+      path = $TMPDIR/xchg
+      read only = no
+      guest ok = yes
+    $EXTRA_SAMBA_CONF
+    SMB
+
+    set -x
+    rm -f ./samba
+    ${socat}/bin/socat unix-listen:./samba exec:"${utillinux}/bin/setsid ${samba}/sbin/smbd \
+        -s $TMPDIR/smb.conf",nofork > /dev/null 2>&1 &
+    while [ ! -e ./samba ]; do sleep 0.1; done # ugly
+  '';
 
   qemuCommandLinux = kernel: ''
     ${qemuProg} \
       ${lib.optionalString (pkgs.stdenv.system == "x86_64-linux") "-cpu kvm64"} \
       -nographic -no-reboot \
+      -net nic,model=virtio \
+      -chardev socket,id=samba,path=./samba \
+      -net user,guestfwd=tcp:10.0.2.4:445-chardev:samba \
       -virtfs local,path=/nix/store,security_model=none,mount_tag=store \
       -virtfs local,path=$TMPDIR/xchg,security_model=none,mount_tag=xchg \
       -drive file=$diskImage,if=virtio,cache=writeback,werror=report \
@@ -232,6 +283,7 @@ rec {
     diskImage=$diskImage
     TMPDIR=$TMPDIR
     cd $TMPDIR
+    ${startSamba}
     ${qemuCommand}
     EOF
 
