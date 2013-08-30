@@ -140,7 +140,7 @@ rec {
 
     if test -n "$usecifs"; then
       echo "re-mounting Nix store using CIFS..."
-      umount /fs/nix/store
+      umount /fs/nix/store || true
       ifconfig eth0 up 10.0.2.15
       mount -t cifs //10.0.2.4/store /fs/nix/store -o guest,sec=none,sec=ntlm
       echo "mounting xchg using CIFS..."
