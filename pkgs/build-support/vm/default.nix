@@ -104,7 +104,7 @@ rec {
     echo -n "loading modules..."
     for i in $(cat ${modulesClosure kernel}/insmod-list); do
       echo -n " $(basename $i .ko)"
-      insmod $i
+      insmod $i || true
     done
     echo
 
