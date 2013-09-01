@@ -103,7 +103,7 @@ rec {
 
     echo "loading kernel modules..."
     for i in $(cat ${modulesClosure kernel}/insmod-list); do
-      insmod $i
+      insmod $i || true # failure to insmod probably shouldn't be fatal
     done
 
     mount -t devtmpfs none /dev || {
