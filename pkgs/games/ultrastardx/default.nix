@@ -1,16 +1,19 @@
-{stdenv, fetchurl, pkgconfig, lua, fpc, pcre, portaudio, freetype, libpng
+{stdenv, fetchsvn, pkgconfig, lua, fpc, pcre, portaudio, freetype, libpng
 , SDL, SDL_image, ffmpeg, sqlite, zlib, libX11 }:
 
 stdenv.mkDerivation rec {
   name = "ultrastardx-1.1";
-  src = fetchurl {
-    url = "mirror://sourceforge/ultrastardx/${name}-src.tar.gz";
-    sha256 = "0sfj5rfgj302avcp6gj5hiypcxms1wc6h3qzjaf5i2a9kcvnibcd";
+  src = fetchsvn {
+    url = "svn://svn.code.sf.net/p/ultrastardx/svn/trunk";
+    rev = "3008";
+    sha256 = "0wlyb6dwpbkdyb13j9sy41m3dzhgajjprgmv82h9kqi81a1rxfpm";
   };
 
   buildInputs = [ pkgconfig fpc pcre portaudio freetype libpng SDL SDL_image ffmpeg
     sqlite lua ];
 
+  # patches = [ ./fix-makefile.diff ];
+  # preConfigure = "patch -p1 < debian/patches/usdx-svn-updates.diff";
 
   # The fpc is not properly wrapped to add -rpath. I add this manually.
   # I even do a trick on lib/lib64 for libgcc, that I expect it will work.
@@ -21,7 +24,7 @@ stdenv.mkDerivation rec {
   '';
 
   # dlopened libgcc requires the rpath not to be shrinked
-  dontPatchELF = true;
+  # dontPatchELF = true;
 
   meta = {
     homepage = http://ultrastardx.sourceforge.net/;
