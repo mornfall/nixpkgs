@@ -580,13 +580,13 @@ rec {
       # strip off the hash.
       stripHash "$src"
       srcName="$strippedName"
-      cp "$src" "$srcName" # `ln' doesn't work always work: RPM requires that the file is owned by root
 
       export HOME=/tmp/home
       mkdir $HOME
 
       rpmout=/tmp/rpmout
-      mkdir $rpmout $rpmout/SPECS $rpmout/BUILD $rpmout/RPMS $rpmout/SRPMS
+      mkdir $rpmout $rpmout/SPECS $rpmout/BUILD $rpmout/RPMS $rpmout/SRPMS $rpmout/SOURCES
+      cp $src $rpmout/SOURCES/$srcName
 
       echo "%_topdir $rpmout" >> $HOME/.rpmmacros
 
