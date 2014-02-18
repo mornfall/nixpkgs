@@ -27,6 +27,13 @@ in
     '';
   };
 
+  bundler = {
+    dontPatchShebangs = 1;
+    postInstall = ''
+        patchShebangs $out/bin/bundle{,_ruby}
+    '';
+  };
+
   ffi = {
     postUnpack = "onetuh";
     buildFlags = ["--with-ffi-dir=${libffi}"];
@@ -132,6 +139,4 @@ in
         zcat ${patch} | patch -p 1
       ''; # */
     };
-
-  bundler = { dontPatchShebangs=1; };
 }
