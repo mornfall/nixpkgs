@@ -9382,9 +9382,15 @@ let
     withX = false;
   }));
 
+
   emacs24Macport_24_3 = lowPrio (callPackage ../applications/editors/emacs-24/macport-24.3.nix {
     stdenv = pkgs.clangStdenv;
   });
+
+  emacs24-lucid = lowPrio (appendToName "lucid" (emacs24.override {
+    withGTK = false;
+  }));
+
   emacs24Macport_24_4 = lowPrio (callPackage ../applications/editors/emacs-24/macport-24.4.nix {
     stdenv = pkgs.clangStdenv;
   });
