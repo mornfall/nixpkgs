@@ -294,7 +294,7 @@ rec {
     chmod +x ./run-vm
     source ./run-vm
 
-    if ! test -e xchg/in-vm-exit; then
+    if ! test -e xchg/in-vm-exit || test -z "$(cat xchg/in-vm-exit)"; then
       echo "Virtual machine didn't produce an exit code."
       exit 1
     fi
