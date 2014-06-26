@@ -270,12 +270,15 @@ rec {
     export > saved-env
 
     PATH=${coreutils}/bin
-    mkdir xchg
+    mkdir -p xchg
     mv saved-env xchg/
 
     diskImage=''${diskImage:-/dev/null}
 
     eval "$preVM"
+
+    # clobber any pre-existing in-vm-exit
+    echo -n > xchg/in-vm-exit
 
     # Write the command to start the VM to a file so that the user can
     # debug inside the VM if the build fails (when Nix is called with
