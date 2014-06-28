@@ -713,13 +713,13 @@ rec {
      `primary.xml.gz' file of a Fedora or openSUSE distribution. */
 
   rpmClosureGenerator =
-    {name, packagesLists, urlPrefixes, packages, archs ? []}:
+    {name, packagesLists, urlPrefixes, packages, archs ? [], strict ? true}:
     assert (builtins.length packagesLists) == (builtins.length urlPrefixes);
     runCommand "${name}.nix" {buildInputs = [perl perlPackages.XMLSimple]; inherit archs;} ''
       ${lib.concatImapStrings (i: pl: ''
         gunzip < ${pl} > ./packages_${toString i}.xml
       '') packagesLists}
-      perl -w ${rpm/rpm-closure.pl} \
+      ${if strict then "STRICT=1" else ""} perl -w ${rpm/rpm-closure.pl} \
         ${lib.concatImapStrings (i: pl: "./packages_${toString i}.xml ${pl.snd} " ) (lib.zipLists packagesLists urlPrefixes)} \
         ${toString packages} > $out
     '';
@@ -754,7 +754,7 @@ rec {
       ensureDir $out
       cd $out
       for r in $rpms; do
-        echo $r | grep "kernel-[0-9]" || continue
+        echo $r | egrep "kernel-([0-9]|core|modules)" || continue
         ${rpm}/bin/rpm2cpio $r | ${cpio}/bin/cpio -i --make-directories
       done
       cd $out
@@ -778,7 +778,8 @@ rec {
       import (rpmClosureGenerator {
         inherit packagesLists urlPrefixes archs;
         name = "kernel";
-        packages = "kernel";
+        packages = [ "kernel" "kernel-core" "kernel-modules" ];
+        strict = false;
       }) { inherit fetchurl; });
 
 

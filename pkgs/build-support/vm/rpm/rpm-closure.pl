@@ -118,6 +118,10 @@ foreach my $pkgName (keys %pkgs) {
 my %donePkgs;
 my @needed = ();
 
+sub maybedie {
+    die @_ if ($ENV{STRICT});
+}
+
 sub closePackage {
     my $pkgName = shift;
 
@@ -125,8 +129,9 @@ sub closePackage {
     $donePkgs{$pkgName} = 1;
     
     print STDERR ">>> $pkgName\n";
-    
-    my $pkg = $pkgs{$pkgName} or die "package $pkgName doesn't exist";
+
+    my $pkg = $pkgs{$pkgName} or
+        return maybedie("package $pkgName doesn't exist");
 
     my $requires = $pkg->{format}->{'rpm:requires'}->{'rpm:entry'} || [];
 
