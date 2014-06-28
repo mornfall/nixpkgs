@@ -38,7 +38,8 @@ rec {
       cp -p ${pkgs.stdenv.glibc}/lib/libm.so.* $out/lib
 
       # Copy BusyBox.
-      cp -pd ${pkgs.busybox}/bin/* ${pkgs.busybox}/sbin/* $out/bin
+      cp -pd ${pkgs.busybox}/bin'/'* ${pkgs.busybox}/sbin'/'* $out/bin #
+      cp -pd ${pkgs.ethtool}/sbin'/'* $out/bin
 
       # Run patchelf to make the programs refer to the copied libraries.
       for i in $out/bin/* $out/lib/*; do if ! test -L $i; then nuke-refs $i; fi; done
@@ -134,6 +135,9 @@ rec {
 
     mkdir -p /fs/tmp/xchg
 
+    # turn off TCP offload as it's buggy in virtio-net in many kernels
+    ethtool -K eth0 tso off gso off
+
     echo "mounting Nix store..."
     mount -t 9p store /fs/nix/store -o trans=virtio,version=9p2000.L,msize=262144,cache=loose || \
       usecifs=1
@@ -148,7 +152,7 @@ rec {
       echo "mounting xchg using CIFS..."
       mount -t cifs //10.0.2.4/xchg /fs/tmp/xchg -o guest,sec=none,sec=ntlm
     else
-      mount -t 9p xchg /fs/tmp/xchg -o trans=virtio,version=9p2000.L,msize=262144,cache=loose
+      mount -t 9p xchg /fs/tmp/xchg -o trans=virtio,version=9p2000.L,msize=262144
     fi
 
     mkdir -p /fs/proc
@@ -257,7 +261,7 @@ rec {
       -chardev socket,id=samba,path=./samba \
       -net user,guestfwd=tcp:10.0.2.4:445-chardev:samba \
       -virtfs local,path=/nix/store,security_model=none,mount_tag=store \
-      -virtfs local,path=$TMPDIR/xchg,security_model=none,mount_tag=xchg \
+      -virtfs local,path=$TMPDIR/xchg,security_model=none,mount_tag=xchg,writeout=immediate \
       -drive file=$diskImage,if=virtio,cache=writeback,werror=report \
       -kernel ${kernel}/${img} \
       -initrd ${initrd kernel}/initrd \
