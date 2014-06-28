@@ -130,8 +130,9 @@ rec {
     mkdir -p /fs/nix/store
     mkdir -p /fs/tmp
 
-    # tmpfs may be faster, but there's a tendency to run out of RAM on 32b systems
-    # mount -t tmpfs -o "mode=755" none /fs/tmp
+    # mount tmpfs on /dev/shm and let stage2 mount it on /tmp if desired
+    mkdir -p /fs/dev/shm
+    mount -t tmpfs -o "mode=755" none /fs/dev/shm
 
     mkdir -p /fs/tmp/xchg
 
@@ -192,6 +193,10 @@ rec {
     # Set the system time from the hardware clock.  Works around an
     # apparent KVM > 1.5.2 bug.
     ${pkgs.utillinux}/sbin/hwclock -s
+
+    if test -n "$dontUseTmpfs"; then
+        ${busybox}/bin/busybox mount --bind /dev/shm /tmp
+    fi
 
     export NIX_STORE=/nix/store
     export NIX_BUILD_TOP=/tmp
