@@ -143,7 +143,7 @@ rec {
     mount -t 9p store /fs/nix/store -o trans=virtio,version=9p2000.L,msize=262144,cache=loose || \
       usecifs=1
 
-    /fs${busybox}/bin/busybox ls || usecifs=1
+    /fs${busybox}/bin/busybox ls > /dev/null || usecifs=1
 
     if test -n "$usecifs"; then
       echo "re-mounting Nix store using CIFS..."
