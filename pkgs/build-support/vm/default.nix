@@ -132,9 +132,10 @@ rec {
     mkdir -p /fs/nix/store
     mount -t 9p store /fs/nix/store -o trans=virtio,version=9p2000.L,msize=262144,cache=loose
 
-    mkdir -p /fs/tmp /fs/run /fs/var
-    mount -t tmpfs -o "mode=1777" none /fs/tmp
+    # mount tmpfs on /dev/shm and let stage2 mount it on /tmp if desired
+    mkdir -p /fs/dev/shm /fs/run /fs/var
     mount -t tmpfs -o "mode=755" none /fs/run
+    mount -t tmpfs -o "mode=755" none /fs/dev/shm
     ln -sfn /run /fs/var/run
 
     echo "mounting host's temporary directory..."
@@ -175,6 +176,10 @@ rec {
     # Set the system time from the hardware clock.  Works around an
     # apparent KVM > 1.5.2 bug.
     ${pkgs.utillinux}/bin/hwclock -s
+
+    if test -n "$dontUseTmpfs"; then
+        ${busybox}/bin/busybox mount --bind /dev/shm /tmp
+    fi
 
     export NIX_STORE=/nix/store
     export NIX_BUILD_TOP=/tmp
