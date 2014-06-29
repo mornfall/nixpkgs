@@ -773,6 +773,7 @@ rec {
       cd lib/modules
       ver=`echo *`
       cd $ver
+      find -name \*.ko.xz -exec ${xz}/bin/unxz {} +
       ${module_init_tools}/sbin/depmod -ae -F $out/System.map $ver -b $out
     '';
   };
