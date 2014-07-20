@@ -119,7 +119,12 @@ rec {
     if test -z "$mountDisk"; then
       mount -t tmpfs none /fs
     else
-      mount /dev/${hd} /fs
+      if test -e /dev/vda; then
+        drive=/dev/vda
+      elif test -e /dev/sda; then
+        drive=/dev/sda
+      fi
+      mount $drive /fs
     fi
 
     mkdir -p /fs/dev
@@ -230,7 +235,7 @@ rec {
       -nographic -no-reboot \
       -virtfs local,path=/nix/store,security_model=none,mount_tag=store \
       -virtfs local,path=$TMPDIR/xchg,security_model=none,mount_tag=xchg \
-      -drive file=$diskImage,if=virtio,cache=writeback,werror=report \
+      -drive file=$diskImage''${QEMU_DRIVE_OPTS:-,if=virtio,cache=writeback,werror=report} \
       -kernel ${kernel}/${img} \
       -initrd ${initrd kernel}/initrd \
       -append "console=ttyS0 panic=1 command=${stage2Init} out=$out mountDisk=$mountDisk loglevel=4 $KERNEL_OPTS" \
