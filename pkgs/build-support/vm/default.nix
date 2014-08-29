@@ -64,7 +64,7 @@ rec {
 
   teardown = writeScript "vm-teardown" ''
     #! ${initrdUtils}/bin/ash
-    echo $1 > ./tmp/xchg/in-vm-exit
+    echo $1 > xchg/in-vm-exit
     mount -o remount,ro dummy .
     echo DONE
     poweroff -f
@@ -176,13 +176,13 @@ rec {
 
   stage2Init = writeScript "vm-run-stage2" ''
     #! ${bash}/bin/sh
-    source /tmp/xchg/saved-env
+    source /xchg/saved-env
 
     # Set the system time from the hardware clock.  Works around an
     # apparent KVM > 1.5.2 bug.
     ${pkgs.utillinux}/bin/hwclock -s
 
-    if test -n "$dontUseTmpfs"; then
+    if test -z "$dontUseTmpfs"; then
         ${busybox}/bin/busybox mount --bind /dev/shm /tmp
     fi
 
