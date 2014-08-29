@@ -66,7 +66,7 @@ rec {
 
   teardown = writeScript "vm-teardown" ''
     #! ${initrdUtils}/bin/ash
-    echo $1 > ./tmp/xchg/in-vm-exit
+    echo $1 > xchg/in-vm-exit
     mount -o remount,ro dummy .
     echo DONE
     poweroff -f
@@ -139,7 +139,7 @@ rec {
     mkdir -p /fs/dev/shm
     mount -t tmpfs -o "mode=755" none /fs/dev/shm
 
-    mkdir -p /fs/tmp/xchg
+    mkdir -p /fs/xchg
 
     # turn off TCP offload as it's buggy in virtio-net in many kernels
     ethtool -K eth0 tso off gso off
@@ -156,9 +156,9 @@ rec {
       ifconfig eth0 up 10.0.2.15
       mount -t cifs //10.0.2.4/store /fs/nix/store -o guest,sec=none,sec=ntlm
       echo "mounting xchg using CIFS..."
-      mount -t cifs //10.0.2.4/xchg /fs/tmp/xchg -o guest,sec=none,sec=ntlm
+      mount -t cifs //10.0.2.4/xchg /fs/xchg -o guest,sec=none,sec=ntlm
     else
-      mount -t 9p xchg /fs/tmp/xchg -o trans=virtio,version=9p2000.L,msize=262144
+      mount -t 9p xchg /fs/xchg -o trans=virtio,version=9p2000.L,msize=262144
     fi
 
     mkdir -p /fs/proc
@@ -193,13 +193,13 @@ rec {
 
   stage2Init = writeScript "vm-run-stage2" ''
     #! ${bash}/bin/sh
-    source /tmp/xchg/saved-env
+    source /xchg/saved-env
 
     # Set the system time from the hardware clock.  Works around an
     # apparent KVM > 1.5.2 bug.
     ${pkgs.utillinux}/sbin/hwclock -s
 
-    if test -n "$dontUseTmpfs"; then
+    if test -z "$dontUseTmpfs"; then
         ${busybox}/bin/busybox mount --bind /dev/shm /tmp
     fi
 
