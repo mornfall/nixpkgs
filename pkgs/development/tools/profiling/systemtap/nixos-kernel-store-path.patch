@@ -1,17 +1,21 @@
-This patch makes stap(1) know about the kernel store path on NixOS.
-
---- systemtap-1.2/main.cxx	2010-03-22 22:51:49.000000000 +0100
-+++ systemtap-1.2/main.cxx	2010-05-04 14:56:19.000000000 +0200
-@@ -528,6 +528,32 @@ getmemusage ()
-   return oss.str();
- }
+Common subdirectories: systemtap-2.6.orig/doc and systemtap-2.6/doc
+Common subdirectories: systemtap-2.6.orig/emacs and systemtap-2.6/emacs
+Common subdirectories: systemtap-2.6.orig/EXAMPLES and systemtap-2.6/EXAMPLES
+Common subdirectories: systemtap-2.6.orig/includes and systemtap-2.6/includes
+Common subdirectories: systemtap-2.6.orig/initscript and systemtap-2.6/initscript
+Common subdirectories: systemtap-2.6.orig/java and systemtap-2.6/java
+Common subdirectories: systemtap-2.6.orig/m4 and systemtap-2.6/m4
+Common subdirectories: systemtap-2.6.orig/man and systemtap-2.6/man
+Common subdirectories: systemtap-2.6.orig/po and systemtap-2.6/po
+Common subdirectories: systemtap-2.6.orig/runtime and systemtap-2.6/runtime
+Common subdirectories: systemtap-2.6.orig/scripts and systemtap-2.6/scripts
+diff -u systemtap-2.6.orig/session.cxx systemtap-2.6/session.cxx
+--- systemtap-2.6.orig/session.cxx	2014-09-05 23:33:21.000000000 +0200
++++ systemtap-2.6/session.cxx	2014-09-30 09:15:53.243980701 +0200
+@@ -59,6 +59,26 @@
+ bool systemtap_session::NSPR_Initialized = false;
+ #endif
  
-+/* Read `/proc/cmdline' and extract the store path.  The assumption is that
-+   `/proc/cmdline' looks like this:
-+
-+   BOOT_IMAGE=/nix/store/sxjd69wfcr6w8jlbcc5bc20nwjliq872-linux-2.6.32.8/bzImage systemConfig=/nix/store/kiicqkjwgfvkwrg4fp3dnhwldh7dq7is-system init=/nix/store/czgncihjwx3n58xij6i1rlnz8wv6ym4j-stage-2-init.sh splash=verbose vga=0x317
-+
-+   This is the case on NixOS GNU/Linux.  */
 +static string
 +kernel_store_path (void)
 +{
@@ -32,16 +36,21 @@ This patch makes stap(1) know about the kernel store path on NixOS.
 +  return store_path;
 +}
 +
- int
- main (int argc, char * const argv [])
- {
-@@ -541,7 +567,8 @@ main (int argc, char * const argv [])
-   struct utsname buf;
+ systemtap_session::systemtap_session ():
+   // NB: pointer members must be manually initialized!
+   // NB: don't forget the copy constructor too!
+@@ -102,7 +122,7 @@
    (void) uname (& buf);
-   s.kernel_release = string (buf.release);
--  s.kernel_build_tree = "/lib/modules/" + s.kernel_release + "/build";
-+  s.kernel_build_tree =
-+    kernel_store_path () + "/lib/modules/" + s.kernel_release + "/build";
+   kernel_release = string (buf.release);
+   release = kernel_release;
+-  kernel_build_tree = "/lib/modules/" + kernel_release + "/build";
++  kernel_build_tree = kernel_store_path() + "/lib/modules/" + kernel_release + "/build";
+   architecture = machine = normalize_machine(buf.machine);
  
-   // PR4186: Copy logic from coreutils uname (uname -i) to squash
-   // i?86->i386.  Actually, copy logic from linux top-level Makefile
+   for (unsigned i=0; i<5; i++) perpass_verbose[i]=0;
+Only in systemtap-2.6: session.cxx~
+Common subdirectories: systemtap-2.6.orig/stapdyn and systemtap-2.6/stapdyn
+Common subdirectories: systemtap-2.6.orig/staprun and systemtap-2.6/staprun
+Common subdirectories: systemtap-2.6.orig/tapset and systemtap-2.6/tapset
+Common subdirectories: systemtap-2.6.orig/testsuite and systemtap-2.6/testsuite
+Common subdirectories: systemtap-2.6.orig/vim and systemtap-2.6/vim
