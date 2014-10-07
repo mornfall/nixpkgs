@@ -1,13 +1,13 @@
 { fetchurl, stdenv, elfutils, latex2html, xmlto, docbook_xml_dtd_412
 , libxml2, docbook_xsl, libxslt, texLive, texLiveExtra, ghostscript, pkgconfig
-, gtkmm, libglademm, boost, perl, sqlite }:
+, gtkmm, libglademm, boost, perl, sqlite, gettext }:
 
 stdenv.mkDerivation rec {
-  name = "systemtap-1.2";
+  name = "systemtap-2.6";
 
   src = fetchurl {
     url = "http://sources.redhat.com/systemtap/ftp/releases/${name}.tar.gz";
-    sha256 = "0kxgjr8p1pnncc0l4941gzx0jsyyqjzjqar2qkcjzp266ajn9qz6";
+    sha256 = "0lgiiqbbxcyz32327w1gybbyaf16av64hphnp39qlnzn09vd5xcz";
   };
 
   patches =
@@ -31,14 +31,14 @@ stdenv.mkDerivation rec {
         /...-boost-1.42.0/include/boost/algorithm/string/compare.hpp:43: error: comparison between signed and unsigned integer expressions
 
      */
-    '' sed -i "grapher/Makefile" -e's/-Werror//g'
+    '' # sed -i "grapher/Makefile" -e's/-Werror//g'
     '';
 
   buildInputs =
-    [ elfutils latex2html xmlto texLive texLiveExtra ghostscript
+    [ elfutils latex2html /*xmlto*/ texLive texLiveExtra ghostscript
       pkgconfig gtkmm libglademm boost sqlite
       docbook_xml_dtd_412 libxml2
-      docbook_xsl libxslt
+      docbook_xsl libxslt gettext
     ];
 
   meta = {
@@ -69,6 +69,5 @@ stdenv.mkDerivation rec {
 
     maintainers = [ ];
     platforms = stdenv.lib.platforms.linux;
-    broken = true;
   };
 }
