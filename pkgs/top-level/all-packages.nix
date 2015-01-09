@@ -3740,7 +3740,7 @@ let
     stdenv = clangStdenv;
     libc = glibc;
     binutils = binutils;
-    inherit coreutils zlib;
+    inherit coreutils zlib libcxx libcxxabi;
     extraPackages = [ libcxx libcxxabi ];
     nativeTools = false;
     nativeLibc = false;
