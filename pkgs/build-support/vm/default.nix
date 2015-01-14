@@ -549,7 +549,7 @@ rec {
     postHook = ''
       . ${../release/functions.sh}
       if test -d $src/tarballs; then
-          src=$(findTarballs $src | head -1)
+          src=$(findTarball $src)
       fi
     '';
 
