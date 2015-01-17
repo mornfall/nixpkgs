@@ -80,8 +80,10 @@ if [ "$NIX_ENFORCE_PURITY" = 1 -a -n "$NIX_STORE" ]; then
 fi
 
 if test -n "@libcxx@"; then
-    NIX_CFLAGS_COMPILE="$NIX_CFLAGS_COMPILE -isystem@libcxx@/include/c++/v1 -stdlib=libc++"
-    NIX_CFLAGS_LINK="$NIX_CFLAGS_LINK -L@libcxx@/lib -stdlib=libc++ -L@libcxxabi@/lib -lc++abi"
+    NIX_CFLAGS_COMPILE="$NIX_CFLAGS_COMPILE -isystem@libcxx@/include/c++/v1"
+    NIX_CFLAGS_LINK="$NIX_CFLAGS_LINK -L@libcxx@/lib -stdlib=libc++ -L@libcxxabi@/lib -lc++abi" # libcxx
+    NIX_CFLAGS_LINK="$NIX_CFLAGS_LINK $(echo @libgcc@/lib* @libgcc@/lib/*/*/* | sed -re "s,^| , -L,g")" # libgcc*
+    NIX_CFLAGS_LINK="$NIX_CFLAGS_LINK $(echo @libgcc@/lib/*/*/* | sed -re "s,^| , -B,g")" # crtbegin
 fi
 
 # Add the flags for the C compiler proper.

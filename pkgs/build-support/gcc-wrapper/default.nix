@@ -7,7 +7,7 @@
 
 { name ? "", stdenv, nativeTools, nativeLibc, nativePrefix ? ""
 , gcc ? null, libc ? null, binutils ? null, coreutils ? null, shell ? stdenv.shell
-, zlib ? null, extraPackages ? [], libcxxabi ? null, libcxx ? null
+, zlib ? null, extraPackages ? [], libcxxabi ? "", libcxx ? "", libgcc ? ""
 }:
 
 with stdenv.lib;
@@ -31,9 +31,11 @@ stdenv.mkDerivation {
     (if name != "" then name else gccName + "-wrapper") +
     (if gcc != null && gccVersion != "" then "-" + gccVersion else "");
 
+  clang = if gccName == "clang" then gcc else null;
+
   preferLocalBuild = true;
 
-  inherit gcc shell libcxx libcxxabi;
+  inherit gcc shell libcxx libcxxabi libgcc;
   libc = if nativeLibc then null else libc;
   binutils = if nativeTools then null else binutils;
   # The wrapper scripts use 'cat', so we may need coreutils.

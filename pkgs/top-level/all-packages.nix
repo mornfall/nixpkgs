@@ -2995,6 +2995,7 @@ let
     gcc = build;
     stdenv = clangStdenv;
     libc = glibc;
+    libgcc = gcc.gcc;
     binutils = binutils;
     inherit coreutils zlib libcxx libcxxabi;
     extraPackages = [ libcxx libcxxabi ];
