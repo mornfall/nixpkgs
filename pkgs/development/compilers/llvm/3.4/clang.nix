@@ -25,7 +25,7 @@ stdenv.mkDerivation {
     "-DCLANG_PATH_TO_LLVM_BUILD=${llvm}"
   ] ++
   (stdenv.lib.optional (stdenv.cc.libc != null) "-DC_INCLUDE_DIRS=${stdenv.cc.libc}/include") ++
-  (stdenv.lib.optional (stdenv.cc.cc != null) "-DGCC_INSTALL_PREFIX=${stdenv.cc.cc}");
+  (stdenv.lib.optional (stdenv.cc.gcc != null && stdenv.cc.clang == null) "-DGCC_INSTALL_PREFIX=${stdenv.cc.cc}");
 
   # Clang expects to find LLVMgold in its own prefix
   # Clang expects to find sanitizer libraries in its own prefix

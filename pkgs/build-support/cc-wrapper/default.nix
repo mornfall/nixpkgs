@@ -10,7 +10,7 @@
 , zlib ? null, extraPackages ? [], extraBuildCommands ? ""
 , dyld ? null # TODO: should this be a setup-hook on dyld?
 , isGNU ? false, isClang ? cc.isClang or false
-, libcxxabi ? null, libcxx ? null
+, libcxxabi ? "", libcxx ? "", libgcc ? ""
 }:
 
 with stdenv.lib;
@@ -35,8 +35,10 @@ stdenv.mkDerivation {
     (if cc != null && ccVersion != "" then "-" + ccVersion else "");
 
   preferLocalBuild = true;
+  clang = if ccName == "clang" then cc else null;
+  gcc = if ccName == "gcc" then cc else null;
 
-  inherit cc shell libcxxabi libcxx;
+  inherit cc shell libcxxabi libcxx libgcc;
   libc = if nativeLibc then null else libc;
   binutils = if nativeTools then null else binutils;
   # The wrapper scripts use 'cat', so we may need coreutils.
