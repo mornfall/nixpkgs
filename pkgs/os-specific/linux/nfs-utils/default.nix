@@ -20,6 +20,7 @@ stdenv.mkDerivation rec {
     [ "--disable-gss"
       "--with-statedir=/var/lib/nfs"
       "--with-tirpcinclude=${libtirpc}/include/tirpc"
+      "--enable-ipv6"
     ]
     ++ stdenv.lib.optional (stdenv ? glibc) "--with-rpcgen=${stdenv.glibc}/bin/rpcgen";
 
