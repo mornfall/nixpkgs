@@ -103,8 +103,9 @@ foreach my $pkgName (keys %pkgs) {
         #print "$req->{name}\n";
         #print STDERR "  provides $req\n";
         #die "multiple provides for $req" if defined $provides{$req};
-        $provides{$req->{name}} = $pkgName
-            unless (defined $provides{$req} && grep($provides{$req}, @toplevelPkgs));
+        my $name = $req->{name};
+        $provides{$name} = $pkgName
+            unless (defined $provides{$name} && grep { $_ eq $pkgName } @toplevelPkgs);
     }
 
     if (defined $pkg->{format}->{file}) {
