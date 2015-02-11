@@ -90,6 +90,17 @@ for (my $i = 0; $i < scalar(@packagesFiles); $i++) {
 }
 
 my %provides;
+
+sub add_provides {
+    my ($name, $pkg) = @_;
+    if (defined $provides{$name}) {
+        my @top = grep { $_ eq $pkg } @toplevelPkgs;
+        $provides{$name} = $pkg if (scalar @top > 0);
+    } else {
+        $provides{$name} = $pkg;
+    }
+}
+
 foreach my $pkgName (keys %pkgs) {
     #print STDERR "looking at $pkgName\n";
     my $pkg = $pkgs{$pkgName};
@@ -100,18 +111,13 @@ foreach my $pkgName (keys %pkgs) {
     
     my $provides = $pkg->{format}->{'rpm:provides'}->{'rpm:entry'} or die;
     foreach my $req (@{$provides}) {
-        #print "$req->{name}\n";
-        #print STDERR "  provides $req\n";
-        #die "multiple provides for $req" if defined $provides{$req};
-        my $name = $req->{name};
-        $provides{$name} = $pkgName
-            unless (defined $provides{$name} && grep { $_ eq $pkgName } @toplevelPkgs);
+        &add_provides($req->{name}, $pkgName);
     }
 
     if (defined $pkg->{format}->{file}) {
         foreach my $file (@{$pkg->{format}->{file}}) {
           #print STDERR "  provides file $file\n";
-          $provides{$file} = $pkgName;
+          &add_provides($file, $pkgName);
         }
     }
 }
