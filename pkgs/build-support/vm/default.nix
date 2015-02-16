@@ -1806,7 +1806,6 @@ rec {
     "patch"
     "perl"
     "pkgconfig"
-    "procps"
     "rpm"
     "rpm-build"
     "tar"
